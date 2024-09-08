@@ -5,6 +5,8 @@ sequenceDiagram
 
     browser->>server: POST https://studies.cs.helsinki.fi/exampleapp/new_note
     activate server
+    Note left of server: Server adds the new note to exixsting list of notes and then asks the browser to reload the notes
+    
     server-->>browser: URL redirect
     deactivate server
 
