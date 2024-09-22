@@ -1,48 +1,29 @@
-const handleNameChange=(event)=>{
-  console.log(event.target)
-  setNewName(event.target.value)
+const PersonForm =({newName,newNumber,addName,handleNameChange,handleNumberChange})=>{
+  return(
+      <form onSubmit={addName}>
+      <div> name: <input id="name" value= {newName} onChange={handleNameChange} /> </div>
+      <div> number: <input id="number" value= {newNumber} onChange={handleNumberChange} /> </div>
+      <div>
+        <button type="submit">add</button>
+      </div> 
+    </form>
+  )
 }
 
-const handleNumberChange=(event)=>{
-  console.log(event.target)
-  setNewNumber(event.target.value)
+const Persons=({persons,deletePerson})=>{
+  return(
+    <div>
+      {persons.map((person)=><Person key={person.name} person={person} deletePerson={()=>deletePerson(person)}/>)}
+    </div>
+  )
 }
 
-const addName= (event) =>{
-  console.log(event.target)
-  event.preventDefault()
-  const nameObject= {
-    name:newName,
-    number:newNumber
-  }
-  
-  const included= persons.reduce((acc,person)=>{
-    if(JSON.stringify(nameObject)===JSON.stringify(person)) acc=true
-    return acc
-    } ,
-    false)
-  console.log(included)  
-
-  included
-  ?alert(`${newName} is alredy added`)
-  :setPersons(persons.concat(nameObject)) 
-  console.log(persons)
-
-  setNewName('')
-  setNewNumber('')
+const Person=({person,deletePerson})=>{
+  return(
+    <div>
+    <p>{person.name} {person.number} <button onClick={deletePerson}> delete </button></p>
+    </div>
+  )
 }
 
-const PersonForm =({newName,newNumber})=>{
-    return(
-        <form onSubmit={addName}>
-        <div> name: <input id="name" value= {newName} onChange={handleNameChange} /> </div>
-        <div> number: <input id="number" value= {newNumber} onChange={handleNumberChange} /> </div>
-        <div>
-          <button type="submit">add</button>
-        </div> 
-      </form>
-    )
-}
-
-
-export default PersonForm
+export default{PersonForm,Persons}

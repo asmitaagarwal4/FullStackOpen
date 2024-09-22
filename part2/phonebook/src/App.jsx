@@ -1,17 +1,33 @@
-import { useState } from 'react'
-
+import { useEffect, useState } from 'react'
+import comp from './components/personForm'
+import services from './services/persons'
+import Notification from './components/notification'
 
 const App = () => {
-  const [persons, setPersons] = useState([ 
-    { name: 'Arto Hellas', number: '040-123456', id: 1 },
-    { name: 'Ada Lovelace', number: '39-44-5323523', id: 2 },
-    { name: 'Dan Abramov', number: '12-43-234345', id: 3 },
-    { name: 'Mary Poppendieck', number: '39-23-6423122', id: 4 } ]) 
+  const [persons, setPersons] = useState([])
   const [newName, setNewName] = useState('')
   const [newNumber, setNewNumber] = useState('')
+  const [errorMessage, setErrorMessage] = useState(null)
+  const [doneMessage, setDoneMessage] = useState(null)
+
+  useEffect(()=>{
+    console.log("effect")
+    console.log(persons.length)
+    const extra ={
+      id: 111,
+      name: 'not exist',
+      number: '123456789'
+    }
+  
+    services
+    .getAll()
+    .then((initial)=>{
+      console.log(initial)
+      setPersons(initial)
+    })
+  }, [])
 
   const addName= (event) =>{
-    console.log(event.target)
     event.preventDefault()
 
     const nameObject= {
@@ -20,20 +36,42 @@ const App = () => {
     }
     
     const included= persons.reduce((acc,person)=>{
-      if(JSON.stringify(nameObject)===JSON.stringify(person)) acc=true
-      return acc
+      if(newName===person.name) return person
       } ,
-      false)
+      [])
 
     console.log(included)  
 
-    included
-    ?alert(`${newName} is alredy added`)
-    :setPersons(persons.concat(nameObject)) 
-    
-    
-    console.log(persons)
-
+    if(included!=undefined){
+      if(window.confirm(`${newName} is alredy added. Do you want to Replace the old number with the new number?`)){
+        const newObj = {...included, number:newNumber}
+        console.log(newObj)
+        services
+          .replace(included,newObj)
+          .then((createdObj)=>{
+            setPersons(
+            persons.map((person)=>{
+              if(person.name!==newName) return person
+              else return createdObj
+            }))
+            setDoneMessage(`Modified ${createdObj.name}`)
+            setTimeout(() => {
+            setDoneMessage(null)
+            }, 5000)
+          })
+      }
+    }else{
+      services
+      .add({newName,newNumber})
+      .then((createdObj)=>{
+        setPersons(persons.concat(createdObj))
+        setDoneMessage(`Added ${createdObj.name}`)
+        setTimeout(() => {
+          setDoneMessage(null)
+        }, 5000)
+      })
+    }
+   
     setNewName('')
     setNewNumber('')
   }
@@ -48,43 +86,45 @@ const App = () => {
     setNewNumber(event.target.value)
   }
 
+  const deletePerson = (persontbd)=>{
+    // const toBeDeleted=persons.filter((person) =>{
+    //   return person.id===id
+    // })
+    // console.log(toBeDeleted[0])
+    if (window.confirm(`delete ${persontbd.name}?`)) {
+      services
+      .deleteName(persontbd.id)
+      .then((deletedObj)=>{
+        alert(`${deletedObj.name} was deleted`)
+        const newList= persons.filter((person)=> person.id!==persontbd.id)
+        console.log(newList)
+        setPersons(newList)
+      })
+      .catch(()=>{
+        setErrorMessage(`${persontbd.name} was already deleted from the server`)
+        setTimeout(() => {
+        setErrorMessage(null)
+        }, 5000)
+        const newList= persons.filter((person)=> person.id!==persontbd.id)
+        console.log(newList)
+        setPersons(newList)
+        // alert("was not found")
+    })
+    }
+    
+  }
+
   return (
     <div>
       <h2>Phonebook</h2>
+      <Notification errorMessage={errorMessage} doneMessage={doneMessage}/>
       <h2>add a new</h2>
-      <PersonForm newName={newName} newNumber={newNumber} addName={addName} handleNameChange={handleNameChange} handleNumberChange={handleNumberChange}/>
+      <comp.PersonForm newName={newName} newNumber={newNumber} addName={addName} handleNameChange={handleNameChange} handleNumberChange={handleNumberChange}/>
       <h2>Numbers</h2>
       <div>
-        <Persons persons={persons} />
+        <comp.Persons persons={persons} deletePerson={deletePerson}/>
       </div>
-
     </div>
-  )
-}
-
-const PersonForm =({newName,newNumber,addName,handleNameChange,handleNumberChange})=>{
-  return(
-      <form onSubmit={addName}>
-      <div> name: <input id="name" value= {newName} onChange={handleNameChange} /> </div>
-      <div> number: <input id="number" value= {newNumber} onChange={handleNumberChange} /> </div>
-      <div>
-        <button type="submit">add</button>
-      </div> 
-    </form>
-  )
-}
-
-const Persons=({persons})=>{
-  return(
-    <div>
-      {persons.map((person)=><Person key={person.name} person={person}/>)}
-    </div>
-  )
-}
-
-const Person=({person})=>{
-  return(
-    <p>{person.name} {person.number}</p>
   )
 }
 
